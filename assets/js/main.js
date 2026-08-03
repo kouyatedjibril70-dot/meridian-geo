@@ -1,6 +1,26 @@
   // ---------- PROGRESSIVE ENHANCEMENT ----------
   document.documentElement.classList.add('js');
 
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- MOBILE MENU ----------
+  const burgerBtn = document.getElementById('burgerBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  if (burgerBtn && mobileMenu) {
+    const closeMenu = () => {
+      mobileMenu.classList.remove('open');
+      burgerBtn.setAttribute('aria-expanded', 'false');
+    };
+    burgerBtn.addEventListener('click', () => {
+      const isOpen = mobileMenu.classList.toggle('open');
+      burgerBtn.setAttribute('aria-expanded', String(isOpen));
+    });
+    mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', closeMenu));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeMenu();
+    });
+  }
+
   // ---------- LOADER ----------
   // Sur DOMContentLoaded (pas window.load, qui attend polices/images) + secours
   // court : le loader ne doit jamais bloquer durablement l'affichage de la page.
@@ -86,6 +106,10 @@
         const counters = entry.target.querySelectorAll('.counter');
         counters.forEach(counter => {
           const target = parseInt(counter.dataset.target);
+          if (prefersReducedMotion) {
+            counter.textContent = target.toLocaleString();
+            return;
+          }
           const duration = 2500;
           const startTime = performance.now();
           const animate = (now) => {
@@ -181,16 +205,18 @@
     });
     requestAnimationFrame(animateCanvas);
   }
-  animateCanvas();
+  if (!prefersReducedMotion) animateCanvas();
 
   // ---------- GLOBE PARALLAX ----------
   const globe = document.querySelector('.globe');
-  window.addEventListener('scroll', () => {
-    const scrolled = window.scrollY;
-    if (scrolled < window.innerHeight && globe) {
-      globe.style.transform = `translateY(${scrolled * 0.1}px) rotate(${scrolled * 0.012}deg)`;
-    }
-  }, {passive:true});
+  if (!prefersReducedMotion) {
+    window.addEventListener('scroll', () => {
+      const scrolled = window.scrollY;
+      if (scrolled < window.innerHeight && globe) {
+        globe.style.transform = `translateY(${scrolled * 0.1}px) rotate(${scrolled * 0.012}deg)`;
+      }
+    }, {passive:true});
+  }
 
   // ---------- COPY EMAIL ----------
   const emailLink = document.getElementById('copy-email');
@@ -205,23 +231,25 @@
   }
 
   // ---------- 3D TILT EFFECT ----------
-  document.querySelectorAll('[data-tilt]').forEach(card => {
-    const glow = card.querySelector('.glow');
-    card.addEventListener('mousemove', (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-      const rotateX = (y - centerY) / 20;
-      const rotateY = (centerX - x) / 20;
-      card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
-      if (glow) {
-        glow.style.left = x + 'px';
-        glow.style.top = y + 'px';
-      }
+  if (!prefersReducedMotion) {
+    document.querySelectorAll('[data-tilt]').forEach(card => {
+      const glow = card.querySelector('.glow');
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const rotateX = (y - centerY) / 20;
+        const rotateY = (centerX - x) / 20;
+        card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
+        if (glow) {
+          glow.style.left = x + 'px';
+          glow.style.top = y + 'px';
+        }
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = '';
+      });
     });
-    card.addEventListener('mouseleave', () => {
-      card.style.transform = '';
-    });
-  });
+  }
