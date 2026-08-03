@@ -1,5 +1,10 @@
+  // ---------- PROGRESSIVE ENHANCEMENT ----------
+  document.documentElement.classList.add('js');
+
   // ---------- LOADER ----------
-  window.addEventListener('load', () => {
+  // Sur DOMContentLoaded (pas window.load, qui attend polices/images) + secours
+  // court : le loader ne doit jamais bloquer durablement l'affichage de la page.
+  document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       document.getElementById('loader').classList.add('done');
       // Trigger hero animations after loader
@@ -19,7 +24,7 @@
           document.getElementById('hero-actions').style.transition = 'all .8s cubic-bezier(.16,1,.3,1)';
         }, 1000);
       }, 400);
-    }, 1800);
+    }, 600);
   });
 
   // ---------- CUSTOM CURSOR ----------
@@ -189,7 +194,7 @@
 
   // ---------- COPY EMAIL ----------
   const emailLink = document.getElementById('copy-email');
-  if (emailLink) {
+  if (emailLink && navigator.clipboard) {
     emailLink.addEventListener('click', (e) => {
       e.preventDefault();
       navigator.clipboard.writeText('contact@meridiangeo.sn').then(() => {
