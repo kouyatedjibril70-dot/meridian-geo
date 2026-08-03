@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+  <rect width="300" height="300" rx="56" fill="#0A1416"/>
+  <g transform="translate(0,6) scale(.92) translate(12,12)">
+    <circle cx="150" cy="150" r="120" fill="none" stroke="#C7D2D0" stroke-opacity=".5" stroke-width="10"/>
+    <ellipse cx="150" cy="150" rx="52" ry="120" fill="none" stroke="#0F6E73" stroke-width="10"/>
+    <line x1="150" y1="30" x2="150" y2="270" stroke="#0F6E73" stroke-width="10"/>
+    <ellipse cx="150" cy="150" rx="112" ry="120" fill="none" stroke="#E9A23B" stroke-width="12" transform="rotate(-18 150 150)"/>
+  </g>
+</svg>
