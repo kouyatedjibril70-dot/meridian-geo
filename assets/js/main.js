@@ -2,6 +2,7 @@
   document.documentElement.classList.add('js');
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
 
   // ---------- MOBILE MENU ----------
   const burgerBtn = document.getElementById('burgerBtn');
@@ -129,92 +130,123 @@
 
   // ---------- HERO CANVAS (Constellation) ----------
   const canvas = document.getElementById('heroCanvas');
-  const ctx = canvas.getContext('2d');
-  let width, height, particles = [];
-  const PARTICLE_COUNT = 60;
-  const CONNECTION_DIST = 120;
-  const MOUSE_DIST = 180;
+  if (!prefersReducedMotion && !isCoarsePointer) {
+    const ctx = canvas.getContext('2d');
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    let width, height, particles = [];
+    const PARTICLE_COUNT = 60;
+    const CONNECTION_DIST = 120;
+    const MOUSE_DIST = 180;
 
-  function resizeCanvas() {
-    width = canvas.width = canvas.offsetWidth;
-    height = canvas.height = canvas.offsetHeight;
-  }
-  resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
-
-  class Particle {
-    constructor() {
-      this.x = Math.random() * width;
-      this.y = Math.random() * height;
-      this.vx = (Math.random() - 0.5) * 0.4;
-      this.vy = (Math.random() - 0.5) * 0.4;
-      this.size = Math.random() * 2 + 1;
+    function resizeCanvas() {
+      width = canvas.offsetWidth;
+      height = canvas.offsetHeight;
+      canvas.width = width * DPR;
+      canvas.height = height * DPR;
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     }
-    update() {
-      this.x += this.vx;
-      this.y += this.vy;
-      if (this.x < 0 || this.x > width) this.vx *= -1;
-      if (this.y < 0 || this.y > height) this.vy *= -1;
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.vx = (Math.random() - 0.5) * 0.4;
+        this.vy = (Math.random() - 0.5) * 0.4;
+        this.size = Math.random() * 2 + 1;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > width) this.vx *= -1;
+        if (this.y < 0 || this.y > height) this.vy *= -1;
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(233,162,59,0.4)';
+        ctx.fill();
+      }
     }
-    draw() {
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(233,162,59,0.4)';
-      ctx.fill();
-    }
-  }
 
-  for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
+    for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
 
-  let mouseCanvasX = 0, mouseCanvasY = 0;
-  canvas.addEventListener('mousemove', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    mouseCanvasX = e.clientX - rect.left;
-    mouseCanvasY = e.clientY - rect.top;
-  });
+    let mouseCanvasX = 0, mouseCanvasY = 0;
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseCanvasX = e.clientX - rect.left;
+      mouseCanvasY = e.clientY - rect.top;
+    });
 
-  function animateCanvas() {
-    ctx.clearRect(0, 0, width, height);
-    particles.forEach((p, i) => {
-      p.update();
-      p.draw();
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = p.x - particles[j].x;
-        const dy = p.y - particles[j].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < CONNECTION_DIST) {
+    let canvasRunning = false;
+    function animateCanvas() {
+      if (!canvasRunning) return;
+      ctx.clearRect(0, 0, width, height);
+      particles.forEach((p, i) => {
+        p.update();
+        p.draw();
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = p.x - particles[j].x;
+          const dy = p.y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < CONNECTION_DIST) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(15,110,115,${0.15 * (1 - dist / CONNECTION_DIST)})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+        const mdx = p.x - mouseCanvasX;
+        const mdy = p.y - mouseCanvasY;
+        const mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < MOUSE_DIST) {
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = `rgba(15,110,115,${0.15 * (1 - dist / CONNECTION_DIST)})`;
-          ctx.lineWidth = 0.8;
+          ctx.lineTo(mouseCanvasX, mouseCanvasY);
+          ctx.strokeStyle = `rgba(233,162,59,${0.2 * (1 - mDist / MOUSE_DIST)})`;
+          ctx.lineWidth = 0.6;
           ctx.stroke();
         }
-      }
-      const mdx = p.x - mouseCanvasX;
-      const mdy = p.y - mouseCanvasY;
-      const mDist = Math.sqrt(mdx * mdx + mdy * mdy);
-      if (mDist < MOUSE_DIST) {
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        ctx.lineTo(mouseCanvasX, mouseCanvasY);
-        ctx.strokeStyle = `rgba(233,162,59,${0.2 * (1 - mDist / MOUSE_DIST)})`;
-        ctx.lineWidth = 0.6;
-        ctx.stroke();
-      }
-    });
-    requestAnimationFrame(animateCanvas);
+      });
+      requestAnimationFrame(animateCanvas);
+    }
+
+    // Pause la boucle quand le hero sort du viewport
+    const heroEl = document.getElementById('hero');
+    if (heroEl) {
+      const canvasObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            if (!canvasRunning) {
+              canvasRunning = true;
+              requestAnimationFrame(animateCanvas);
+            }
+          } else {
+            canvasRunning = false;
+          }
+        });
+      });
+      canvasObserver.observe(heroEl);
+    }
   }
-  if (!prefersReducedMotion) animateCanvas();
 
   // ---------- GLOBE PARALLAX ----------
   const globe = document.querySelector('.globe');
-  if (!prefersReducedMotion) {
+  if (!prefersReducedMotion && !isCoarsePointer && globe) {
+    let parallaxTicking = false;
     window.addEventListener('scroll', () => {
-      const scrolled = window.scrollY;
-      if (scrolled < window.innerHeight && globe) {
-        globe.style.transform = `translateY(${scrolled * 0.1}px) rotate(${scrolled * 0.012}deg)`;
-      }
+      if (parallaxTicking) return;
+      parallaxTicking = true;
+      requestAnimationFrame(() => {
+        const scrolled = window.scrollY;
+        if (scrolled < window.innerHeight) {
+          globe.style.transform = `translateY(${scrolled * 0.1}px) rotate(${scrolled * 0.012}deg)`;
+        }
+        parallaxTicking = false;
+      });
     }, {passive:true});
   }
 
@@ -231,13 +263,17 @@
   }
 
   // ---------- 3D TILT EFFECT ----------
-  if (!prefersReducedMotion) {
+  if (!prefersReducedMotion && !isCoarsePointer) {
     document.querySelectorAll('[data-tilt]').forEach(card => {
       const glow = card.querySelector('.glow');
-      card.addEventListener('mousemove', (e) => {
-        const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+      let rect = null;
+      let pendingX = 0, pendingY = 0, tiltTicking = false;
+
+      const applyTilt = () => {
+        tiltTicking = false;
+        if (!rect) return;
+        const x = pendingX - rect.left;
+        const y = pendingY - rect.top;
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
         const rotateX = (y - centerY) / 20;
@@ -247,9 +283,23 @@
           glow.style.left = x + 'px';
           glow.style.top = y + 'px';
         }
+      };
+
+      // Lecture du layout une seule fois par survol, pas à chaque mousemove
+      card.addEventListener('mouseenter', () => {
+        rect = card.getBoundingClientRect();
+      });
+      card.addEventListener('mousemove', (e) => {
+        pendingX = e.clientX;
+        pendingY = e.clientY;
+        if (!tiltTicking) {
+          tiltTicking = true;
+          requestAnimationFrame(applyTilt);
+        }
       });
       card.addEventListener('mouseleave', () => {
         card.style.transform = '';
+        rect = null;
       });
     });
   }
