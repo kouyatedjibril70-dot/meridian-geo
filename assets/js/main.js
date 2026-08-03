@@ -61,8 +61,14 @@
   });
 
   function animateCursor() {
-    cursorX += (mouseX - cursorX) * 0.15;
-    cursorY += (mouseY - cursorY) * 0.15;
+    if (prefersReducedMotion) {
+      // Pas de lissage/traînée sous reduced-motion : suit la souris 1:1
+      cursorX = mouseX;
+      cursorY = mouseY;
+    } else {
+      cursorX += (mouseX - cursorX) * 0.15;
+      cursorY += (mouseY - cursorY) * 0.15;
+    }
     cursor.style.left = cursorX + 'px';
     cursor.style.top = cursorY + 'px';
     requestAnimationFrame(animateCursor);
