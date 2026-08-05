@@ -87,10 +87,12 @@
   onScroll();
 
   // ---------- SMOOTH SCROLL ----------
+  // scrollIntoView({behavior}) est explicite et prime sur le CSS
+  // scroll-behavior : on doit donc aussi désactiver le smooth ici.
   document.querySelectorAll('a[href^="#"]').forEach(a => {
     a.addEventListener('click', e => {
       const t = document.querySelector(a.getAttribute('href'));
-      if (t){ e.preventDefault(); t.scrollIntoView({behavior:'smooth', block:'start'}); }
+      if (t){ e.preventDefault(); t.scrollIntoView({behavior: prefersReducedMotion ? 'auto' : 'smooth', block:'start'}); }
     });
   });
 
@@ -107,6 +109,11 @@
   document.querySelectorAll('.reveal, .eyebrow').forEach(el => revealObserver.observe(el));
 
   // ---------- COUNTER ANIMATION ----------
+  // Le HTML affiche la valeur finale par défaut (lisible sans JS) ; avec JS,
+  // on repart de 0 pour l'effet de comptage.
+  document.querySelectorAll('.counter').forEach(counter => {
+    counter.textContent = '0';
+  });
   const counterObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
