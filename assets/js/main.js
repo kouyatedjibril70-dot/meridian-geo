@@ -1,6 +1,12 @@
   // ---------- PROGRESSIVE ENHANCEMENT ----------
   document.documentElement.classList.add('js');
 
+  // Interrupteur unique pour les 3 effets les plus marqués (canvas, tilt/
+  // parallax du globe, curseur perso) : true = version démo, false = version
+  // sobre production. Comparer les deux en changeant cette seule ligne.
+  const ENABLE_FX = true;
+  document.documentElement.classList.toggle('fx', ENABLE_FX);
+
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
 
@@ -49,36 +55,38 @@
   });
 
   // ---------- CUSTOM CURSOR ----------
-  const cursor = document.getElementById('cursor');
-  const cursorDot = document.getElementById('cursor-dot');
-  let mouseX = 0, mouseY = 0, cursorX = 0, cursorY = 0;
+  if (ENABLE_FX) {
+    const cursor = document.getElementById('cursor');
+    const cursorDot = document.getElementById('cursor-dot');
+    let mouseX = 0, mouseY = 0, cursorX = 0, cursorY = 0;
 
-  document.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-    cursorDot.style.left = mouseX + 'px';
-    cursorDot.style.top = mouseY + 'px';
-  });
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      cursorDot.style.left = mouseX + 'px';
+      cursorDot.style.top = mouseY + 'px';
+    });
 
-  function animateCursor() {
-    if (prefersReducedMotion) {
-      // Pas de lissage/traînée sous reduced-motion : suit la souris 1:1
-      cursorX = mouseX;
-      cursorY = mouseY;
-    } else {
-      cursorX += (mouseX - cursorX) * 0.15;
-      cursorY += (mouseY - cursorY) * 0.15;
+    function animateCursor() {
+      if (prefersReducedMotion) {
+        // Pas de lissage/traînée sous reduced-motion : suit la souris 1:1
+        cursorX = mouseX;
+        cursorY = mouseY;
+      } else {
+        cursorX += (mouseX - cursorX) * 0.15;
+        cursorY += (mouseY - cursorY) * 0.15;
+      }
+      cursor.style.left = cursorX + 'px';
+      cursor.style.top = cursorY + 'px';
+      requestAnimationFrame(animateCursor);
     }
-    cursor.style.left = cursorX + 'px';
-    cursor.style.top = cursorY + 'px';
-    requestAnimationFrame(animateCursor);
-  }
-  animateCursor();
+    animateCursor();
 
-  document.querySelectorAll('a, button, .dcard, .scard').forEach(el => {
-    el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
-    el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
-  });
+    document.querySelectorAll('a, button, .dcard, .scard').forEach(el => {
+      el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
+      el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
+    });
+  }
 
   // ---------- NAVBAR SCROLL ----------
   const navbar = document.getElementById('navbar');
@@ -108,42 +116,9 @@
   }, observerOptions);
   document.querySelectorAll('.reveal, .eyebrow').forEach(el => revealObserver.observe(el));
 
-  // ---------- COUNTER ANIMATION ----------
-  // Le HTML affiche la valeur finale par défaut (lisible sans JS) ; avec JS,
-  // on repart de 0 pour l'effet de comptage.
-  document.querySelectorAll('.counter').forEach(counter => {
-    counter.textContent = '0';
-  });
-  const counterObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const counters = entry.target.querySelectorAll('.counter');
-        counters.forEach(counter => {
-          const target = parseInt(counter.dataset.target);
-          if (prefersReducedMotion) {
-            counter.textContent = target.toLocaleString();
-            return;
-          }
-          const duration = 2500;
-          const startTime = performance.now();
-          const animate = (now) => {
-            const elapsed = now - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const ease = 1 - Math.pow(1 - progress, 4);
-            counter.textContent = Math.floor(ease * target).toLocaleString();
-            if (progress < 1) requestAnimationFrame(animate);
-          };
-          requestAnimationFrame(animate);
-        });
-        counterObserver.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.5 });
-  document.querySelectorAll('.proof').forEach(el => counterObserver.observe(el));
-
   // ---------- HERO CANVAS (Constellation) ----------
   const canvas = document.getElementById('heroCanvas');
-  if (!prefersReducedMotion && !isCoarsePointer) {
+  if (ENABLE_FX && !prefersReducedMotion && !isCoarsePointer) {
     const ctx = canvas.getContext('2d');
     const DPR = Math.min(window.devicePixelRatio || 1, 2);
     let width, height, particles = [];
@@ -248,7 +223,7 @@
 
   // ---------- GLOBE PARALLAX ----------
   const globe = document.querySelector('.globe');
-  if (!prefersReducedMotion && !isCoarsePointer && globe) {
+  if (ENABLE_FX && !prefersReducedMotion && !isCoarsePointer && globe) {
     let parallaxTicking = false;
     window.addEventListener('scroll', () => {
       if (parallaxTicking) return;
@@ -268,7 +243,7 @@
   if (emailLink && navigator.clipboard) {
     emailLink.addEventListener('click', (e) => {
       e.preventDefault();
-      navigator.clipboard.writeText('contact@meridiangeo.sn').then(() => {
+      navigator.clipboard.writeText('contact.meridiangeo@gmail.com').then(() => {
         emailLink.classList.add('copied');
         setTimeout(() => emailLink.classList.remove('copied'), 2000);
       });
